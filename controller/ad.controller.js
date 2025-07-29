@@ -71,7 +71,7 @@ export const generateAIScript = async (req, res) => {
   const createVideoRes = await axios.post(
   "https://api.freepik.com/v1/ai/image-to-video/minimax-hailuo-02-768p",
   {
-    webhook_url: "https://your-domain.com/api/webhook/freepik",
+    webhook_url: "https://adwise-backend-zk7u.onrender.com/api/v1/ad/webhook/freepik",
     prompt: JSON.stringify(created.scripts),
     prompt_optimizer: true,
     first_frame_image: "https://img.freepik.com/free-photo/beautiful-sunset-over-mountains_123456-7890.jpg",
