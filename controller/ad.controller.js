@@ -69,10 +69,10 @@ export const generateAIScript = async (req, res) => {
     // GENERATE VIDEO WITH FREEPEK BASED ON EACH SCRIPTS 
 
   const createVideoRes = await axios.post(
-  "https://api.freepik.com/v1/ai/text-to-video/minimax-hailuo-02-768p",
+  "https://api.freepik.com/v1/ai/image-to-video/minimax-hailuo-02-1080p",
   {
     webhook_url: "https://adwise-backend-zk7u.onrender.com/api/v1/ad/webhook/freepik",
-    prompt: JSON.stringify(created.scripts),
+     prompt: `${parsedScripts[0].title}: ${parsedScripts[0].content}`,
     prompt_optimizer: true,
     duration: 30
   },
