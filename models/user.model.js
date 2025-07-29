@@ -5,7 +5,12 @@ const userSchema = new  mongoose.Schema({
     lastName: { type: String, required: [true, 'User name is required'], trim: true, minLength: 2},
     email: { type: String, required: [true, 'User name is required'], trim: true, minLength: 2},
     userType: {type: Number, default: 0},
-    imageUrl: (type: String)
+    imageUrl: {type: String},
+    bio: { type: String},
+    categories: { type: Array(String)},
+    rate: {type: Number, default: 10000},
+    clerkId: {type: String, required: [true, 'Clerk is required'],}
+
 }, {timestamps: true})
 
 const User = mongoose.model("User", userSchema)
