@@ -5,6 +5,7 @@ import authRouter from './routes/auth.routes.js';
 import connectToDatabase from './database/mongodb.js';
 import { clerkWebhook } from './controller/auth.controller.js';
 import bodyParser from 'body-parser';
+import adRouter from './routes/ad.routes.js';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 
 // ✅ This includes the raw POST only on /clerk
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/ad', adRouter);
 
 app.listen(PORT, async () => {
   console.log(`Server running on PORT ${PORT}`);

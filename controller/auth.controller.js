@@ -3,9 +3,6 @@ import { CLERK_WEBHOOK_SECRET } from '../config/env.js';
 import User from '../models/user.model.js';
 
 export const clerkWebhook = async (req, res) => {
-  console.log('BODY IS BUFFER:', Buffer.isBuffer(req.body));
-  console.log('BODY TYPE:', typeof req.body);
-
   const svixId = req.headers['svix-id'];
   const svixTimestamp = req.headers['svix-timestamp'];
   const svixSignature = req.headers['svix-signature'];
