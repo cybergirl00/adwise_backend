@@ -74,7 +74,7 @@ export const generateAIScript = async (req, res) => {
     webhook_url: "https://adwise-backend-zk7u.onrender.com/api/v1/ad/webhook/freepik",
      prompt: `${parsedScripts[0].title}: ${parsedScripts[0].content}`,
     prompt_optimizer: true,
-    duration: 30
+    duration: 6
   },
   {
     headers: {
