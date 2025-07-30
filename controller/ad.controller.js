@@ -61,10 +61,10 @@ export const generateAIScript = async (req, res) => {
         .json({ message: "Invalid JSON format from AI", error: err.message });
     }
 
-    const created = await Script.create({
-      clerkId: "ser_30XwUFjTM9FH4VsdmBVm14sSR3m",
-      scripts: parsedScripts,
-    });
+    // const created = await Script.create({
+    //   clerkId: "ser_30XwUFjTM9FH4VsdmBVm14sSR3m",
+    //   scripts: parsedScripts,
+    // });
 
     // GENERATE VIDEO WITH FREEPEK BASED ON EACH SCRIPTS 
 
@@ -84,11 +84,23 @@ export const generateAIScript = async (req, res) => {
   }
 );
 
+console.log('Freepik response', createVideoRes.data)
+
 const taskId = createVideoRes.data?.task_id;
 
-await Script.findByIdAndUpdate(created._id, {
-  $set: { "scripts.$[].taskId": taskId } 
-});
+if(createVideoRes.data.status === 'COMPLETED') {
+    const created = await Script.create({
+      clerkId: "ser_30XwUFjTM9FH4VsdmBVm14sSR3m",
+      scripts: parsedScripts,
+    });
+}
+
+
+
+
+// await Script.findByIdAndUpdate(created._id, {
+//   $set: { "scripts.$[].taskId": taskId } 
+// });
 
 return res.status(201).json({ message: "Scripts saved", data: created, taskId });
 
@@ -103,6 +115,7 @@ return res.status(201).json({ message: "Scripts saved", data: created, taskId })
 export const FREEPEKWebhook = async (req, res) => {
   try {
     const secret = FREEPIK_WEBHOOK_SECRET;
+    console.log(secret)
     const signature = req.headers["x-webhook-signature"];
 
     // Verify webhook signature
@@ -115,19 +128,19 @@ export const FREEPEKWebhook = async (req, res) => {
       return res.status(401).json({ message: "Invalid signature" });
     }
 
-    const { task_id, status, video_url } = req.body;
+    const { task_id, status, generated } = req.body;
 
     if (status === "IN_PROGRESS") {
       return res.status(200).json({ message: "Still processing" });
     }
 
     if (status === "COMPLETED") {
-      // Update matching script(s)
+      console.log('Video Url', generated[0])
       await Script.updateMany(
         { "scripts.taskId": task_id },
         {
           $set: {
-            "scripts.$[elem].videoUrl": video_url,
+            "scripts.$[elem].videoUrl": generated[0],
             "status": 2,
           },
         },
