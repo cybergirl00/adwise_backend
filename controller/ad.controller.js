@@ -1,14 +1,22 @@
 import OpenAI from "openai";
-import { FREEPIK_API_KEY, FREEPIK_WEBHOOK_SECRET, OPENROUTER_API_KEY } from "../config/env.js";
+import { FREEPIK_API_KEY, FREEPIK_WEBHOOK_SECRET, OPENROUTER_API_KEY, VEO3_API_KEY } from "../config/env.js";
 import { GENERATE_SCRIPT_PROMPT } from "../services/Prompt.js";
 import Script from "../models/script.model.js";
 import axios from "axios";
 import crypto from 'crypto'
+import Media from "../models/media.model.js";
+import User from "../models/user.model.js";
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: OPENROUTER_API_KEY,
 });
+
+const apiKey = VEO3_API_KEY;
+const headers = {
+  'Authorization': `Bearer ${apiKey}`,
+  'Content-Type': 'application/json'
+};
 
 export const generateAIScript = async (req, res) => {
   try {
@@ -60,47 +68,23 @@ export const generateAIScript = async (req, res) => {
         .status(500)
         .json({ message: "Invalid JSON format from AI", error: err.message });
     }
+const response = await fetch('https://api.veo3api.ai/api/v1/veo/generate', {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify({
+      prompt: prompt,
+      model: "veo3",
+      aspectRatio: "16:9",
+      watermark: "MyBrand"
+    })
+  });
+  
+  const result = await response.json();
+  const taskId =  result.data.taskId;
 
-    // const created = await Script.create({
-    //   clerkId: "ser_30XwUFjTM9FH4VsdmBVm14sSR3m",
-    //   scripts: parsedScripts,
-    // });
-
-    // GENERATE VIDEO WITH FREEPEK BASED ON EACH SCRIPTS 
-
-  const createVideoRes = await axios.post(
-  "https://api.freepik.com/v1/ai/image-to-video/minimax-hailuo-02-1080p",
-  {
-    webhook_url: "https://adwise-backend-zk7u.onrender.com/api/v1/ad/webhook/freepik",
-     prompt: `${parsedScripts[0].title}: ${parsedScripts[0].content}`,
-    prompt_optimizer: true,
-    duration: 6
-  },
-  {
-    headers: {
-      "x-freepik-api-key": FREEPIK_API_KEY,
-      "Content-Type": "application/json"
-    }
-  }
-);
-
-console.log('Freepik response', createVideoRes.data)
-
-const taskId = createVideoRes.data?.task_id;
-
-if(createVideoRes.data.status === 'COMPLETED') {
-    const created = await Script.create({
-      clerkId: "ser_30XwUFjTM9FH4VsdmBVm14sSR3m",
-      scripts: parsedScripts,
-    });
-}
-
-
-
-
-// await Script.findByIdAndUpdate(created._id, {
-//   $set: { "scripts.$[].taskId": taskId } 
-// });
+await Script.findByIdAndUpdate(created._id, {
+  $set: { "scripts.$[].taskId": taskId } 
+});
 
 return res.status(201).json({ message: "Scripts saved", data: created, taskId });
 
@@ -112,47 +96,48 @@ return res.status(201).json({ message: "Scripts saved", data: created, taskId })
 
 
 
-export const FREEPEKWebhook = async (req, res) => {
+export const backgroundTask = async () => {}
+
+
+export const createMedia = async (req, res) => {
   try {
-    const secret = FREEPIK_WEBHOOK_SECRET;
-    console.log(secret)
-    const signature = req.headers["x-webhook-signature"];
-
-    // Verify webhook signature
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(JSON.stringify(req.body))
-      .digest("hex");
-
-    if (signature !== expected) {
-      return res.status(401).json({ message: "Invalid signature" });
+    const { title, description, mediaUrl, clerkId, ownerId } = req.body;
+    
+    if (!title || !description || !mediaUrl || !clerkId) {
+      return res.status(400).json({
+        message: "Title, description, mediaUrl, and clerkId are required.",
+      });
     }
 
-    const { task_id, status, generated } = req.body;
-
-    if (status === "IN_PROGRESS") {
-      return res.status(200).json({ message: "Still processing" });
+    const creator = await User.findOne({ clerkId });
+    if (!creator) {
+      return res.status(404).json({ message: "Creator not found" });
     }
 
-    if (status === "COMPLETED") {
-      console.log('Video Url', generated[0])
-      await Script.updateMany(
-        { "scripts.taskId": task_id },
-        {
-          $set: {
-            "scripts.$[elem].videoUrl": generated[0],
-            "status": 2,
-          },
-        },
-        {
-          arrayFilters: [{ "elem.taskId": task_id }],
-        }
-      );
+    if (ownerId) {
+      const owner = await User.findOne({ clerkId: ownerId });
+      if (!owner) {
+        return res.status(404).json({ message: "Owner not found" });
+      }
     }
+    const createdMedia = await Media.create({
+      title,
+      description,
+      mediaUrl,
+      clerkId,
+      ownerId: ownerId || null,
+    });
 
-    return res.status(200).json({ message: "Updated successfully" });
+    return res.status(201).json({
+      message: "Media created successfully",
+      data: createdMedia,
+    });
+
   } catch (error) {
-    console.error("Webhook Error:", error);
-    return res.status(500).json({ message: "Internal error" });
+    console.error("CreateMedia Error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
