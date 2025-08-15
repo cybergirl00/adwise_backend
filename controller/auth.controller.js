@@ -32,20 +32,20 @@ export const clerkWebhook = async (req, res) => {
       console.log('✅ User created!');
     }
 
-    else if (evt.type === 'user.updated') {
-      await User.findOneAndUpdate(
-        { clerkId: data.id },
-        {
-          firstName: data.first_name || '',
-          lastName: data.last_name || '',
-          email: data.email_addresses[0]?.email_address || '',
-          userType: data.unsafe_metadata?.userType || 0,
-          imageUrl: data.image_url || '',
-        },
-        { new: true, upsert: true } // upsert for safety
-      );
-      console.log('✅ User updated!');
-    }
+    // else if (evt.type === 'user.updated') {
+    //   await User.findOneAndUpdate(
+    //     { clerkId: data.id },
+    //     {
+    //       firstName: data.first_name || '',
+    //       lastName: data.last_name || '',
+    //       email: data.email_addresses[0]?.email_address || '',
+    //       userType: data.unsafe_metadata?.userType || 0,
+    //       imageUrl: data.image_url || '',
+    //     },
+    //     { new: true, upsert: true } // upsert for safety
+    //   );
+    //   console.log('✅ User updated!');
+    // }
 
     else if (evt.type === 'user.deleted') {
       await User.findOneAndDelete({ clerkId: data.id });

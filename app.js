@@ -8,6 +8,9 @@ import bodyParser from 'body-parser';
 import adRouter from './routes/ad.routes.js';
 import Script from './models/script.model.js';
 import cron from "node-cron";
+import walletRouter from './routes/wallet.route.js';
+import campaignRouter from './routes/campaign.routes.js';
+import userRouter from './routes/user.routes.js';
 
 
 const app = express();
@@ -63,26 +66,27 @@ export const backgroundTask = async () => {
 };
 
 // Schedule it every 2 minutes
-cron.schedule("*/2 * * * *", () => {
-  console.log("Running background task...");
-  backgroundTask();
-});
+// cron.schedule("*/2 * * * *", () => {
+//   console.log("Running background task...");
+//   backgroundTask();
+// });
 
 app.post(
   '/api/v1/auth/clerk',
   bodyParser.raw({ type: 'application/json' }), clerkWebhook
 );
 
-// ✅ Normal JSON for other routes
 app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Welcome to Adwise!');
 });
 
-// ✅ This includes the raw POST only on /clerk
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/user', userRouter)
 app.use('/api/v1/ad', adRouter);
+app.use('/api/v1/wallet', walletRouter);
+app.use('/api/v1/campaign', campaignRouter)
 
 app.listen(PORT, async () => {
   console.log(`Server running on PORT ${PORT}`);

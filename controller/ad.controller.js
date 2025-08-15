@@ -102,7 +102,7 @@ export const backgroundTask = async () => {}
 export const createMedia = async (req, res) => {
   try {
     const { title, description, mediaUrl, clerkId, ownerId } = req.body;
-    
+
     if (!title || !description || !mediaUrl || !clerkId) {
       return res.status(400).json({
         message: "Title, description, mediaUrl, and clerkId are required.",
@@ -141,3 +141,24 @@ export const createMedia = async (req, res) => {
     });
   }
 };
+
+
+export const getUserMedia = async (req, res) => {
+  try {
+    const { ownerId} = req.params;
+
+    if(!ownerId) {
+      return res.status(400).json({ message: "Owner Id id required"})
+    }
+
+    const media = await Media.find({ ownerId: ownerId})
+
+    if(!media) {
+      return res.status(404).json({ message: "Owner is not found", media})
+    }
+
+    return res.status(200).json({ message: "Media found", data: media})
+  } catch (error) {
+    return res.status(500).json({ message: "Inter server Error ", error: error?.message})
+  }
+}

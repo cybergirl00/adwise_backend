@@ -9,7 +9,11 @@ const userSchema = new  mongoose.Schema({
     bio: { type: String},
     categories: { type: Array(String)},
     rate: {type: Number, default: 10000},
-    clerkId: {type: String, required: [true, 'Clerk is required'],}
+    clerkId: {type: String, required: [true, 'Clerk is required'],},
+    balance: {type: Number, default: 0},
+    profile: {type: Number, default: 2},
+    specialties: {type: Array(String)},
+    portfolio: {type: Array(String)}
 
 }, {timestamps: true})
 

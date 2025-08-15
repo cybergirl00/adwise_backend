@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {  createMedia, generateAIScript } from "../controller/ad.controller.js";
+import {  createMedia, generateAIScript, getUserMedia } from "../controller/ad.controller.js";
 
 const adRouter = Router();
 
@@ -11,5 +11,6 @@ adRouter.post('/generateScript', generateAIScript)
 // adRouter.post("/webhook/freepik", FREEPEKWebhook);
 
 adRouter.post('/createMedia', createMedia)
+adRouter.get('/getMedia/:ownerId', getUserMedia)
 
 export default adRouter;
