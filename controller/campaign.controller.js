@@ -9,10 +9,10 @@ import Message from "../models/message.model.js";
 
 export const createCampaign = async (req, res) => {
   try {
-    const { clerkId, title, description, budget, format, audience, mediaId, category } = req.body;
+    const { clerkId, title, description, budget, format, audience, mediaId, category, redirectUrl } = req.body;
 
     // Validate required fields
-    if (!clerkId || !title || !description || !budget || !format || !audience || !mediaId || !category) {
+    if (!clerkId || !title || !description || !budget || !format || !audience || !mediaId || !category || !redirectUrl) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -50,7 +50,8 @@ export const createCampaign = async (req, res) => {
       format,
       audience,
       mediaId,
-      category
+      category,
+      redirectUrl
     });
 
     media.campaignId = newCampaign?._id
@@ -317,7 +318,7 @@ export const approveRequest = async (req, res) => {
 
 export const createSubmission = async (req, res) => {
   try {
-    let { requestId, creatorId, title, files,   } = req.body;
+    let { requestId, creatorId, title, files,    } = req.body;
     
     // Validation
     if (!requestId || !creatorId || !title || !files ) {
