@@ -11,66 +11,96 @@ import cron from "node-cron";
 import walletRouter from './routes/wallet.route.js';
 import campaignRouter from './routes/campaign.routes.js';
 import userRouter from './routes/user.routes.js';
-
+import messageRouter from './routes/messages.routes.js';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import Message from './models/message.model.js';
+import appRouter from './routes/app.routes.js';
 
 const app = express();
+app.use(express.json());
+
 
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'svix-id', 'svix-timestamp', 'svix-signature']
+  allowedHeaders: ['Content-Type', 'svix-id', 'svix-timestamp', 'svix-signature', 'x-api-key'],
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
-const headers = {
-  'Authorization': `Bearer ${VEO3_API_KEY}`,
-  'Content-Type': 'application/json'
-};
+// Store typing users
+const typingUsers = new Map();
 
-export const backgroundTask = async () => {
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  // Join user to their own room (using clerkId)
+  socket.on('join', (clerkId) => {
+    socket.join(clerkId);
+    console.log(`User ${clerkId} joined their room`);
+  });
+
+  // Handle typing indicator
+  socket.on('typing', ({ senderId, recieverId, isTyping }) => {
+    if (isTyping) {
+      typingUsers.set(senderId, recieverId);
+    } else {
+      typingUsers.delete(senderId);
+    }
+    socket.to(recieverId).emit('typing', { senderId, isTyping });
+  });
+
+  // Handle new messages
+socket.on('newMessage', async (message) => {
   try {
-    // Find all scripts where a taskId exists and videoUrl is missing
-    const scripts = await Script.find({ 
-      "scripts.taskId": { $exists: true },
-      "scripts.videoUrl": { $exists: false } 
+    // Validate required fields
+    if (!message.content || !message.senderId || !message.recieverId) {
+      throw new Error('Missing required message fields');
+    }
+
+    const savedMessage = await Message.create({
+      content: message.content,
+      senderId: message.senderId,
+      recieverId: message.recieverId, // Ensure correct spelling
+      type: 1
     });
+    
+    io.to(message.senderId).emit('messageReceived', savedMessage);
+    io.to(message.recieverId).emit('messageReceived', savedMessage);
+    
+  } catch (error) {
+    console.error('Error handling message:', error);
+    // Optionally notify the sender about the error
+    socket.emit('messageError', {
+      error: 'Failed to send message',
+      details: error.message
+    });
+  }
+});
 
-    for (const script of scripts) {
-      for (const item of script.scripts) {
-        if (!item.taskId || item.videoUrl) continue;
-
-        try {
-          const res = await axios.get(`https://api.veo3api.ai/api/v1/veo/status/${item.taskId}`, {
-            headers,
-          });
-
-          const status = res.data?.data?.status;
-          const videoUrl = res.data?.data?.videoUrl;
-
-          if (status === "completed" && videoUrl) {
-            // Update the nested script videoUrl
-            await Script.updateOne(
-              { _id: script._id, "scripts.taskId": item.taskId },
-              { $set: { "scripts.$.videoUrl": videoUrl } }
-            );
-            console.log(`Updated script with video: ${videoUrl}`);
-          }
-        } catch (err) {
-          console.error("Error checking Veo status:", err.message);
-        }
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+    // Clean up typing indicators
+    for (const [userId, recieverId] of typingUsers.entries()) {
+      if (socket.id === userId) {
+        socket.to(recieverId).emit('typing', { senderId: userId, isTyping: false });
+        typingUsers.delete(userId);
       }
     }
-  } catch (err) {
-    console.error("Background task error:", err.message);
-  }
-};
+  });
+});
 
-// Schedule it every 2 minutes
-// cron.schedule("*/2 * * * *", () => {
-//   console.log("Running background task...");
-//   backgroundTask();
-// });
-
+// Middlewares
 app.post(
   '/api/v1/auth/clerk',
   bodyParser.raw({ type: 'application/json' }), clerkWebhook
@@ -78,17 +108,25 @@ app.post(
 
 app.use(express.json());
 
+// Routes
 app.get('/', (req, res) => {
   res.send('Welcome to Adwise!');
 });
 
 app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/user', userRouter)
+app.use('/api/v1/user', userRouter);
 app.use('/api/v1/ad', adRouter);
 app.use('/api/v1/wallet', walletRouter);
-app.use('/api/v1/campaign', campaignRouter)
+app.use('/api/v1/campaign', campaignRouter);
+app.use('/api/v1/messages', messageRouter);
+app.use('/api/v1/app', appRouter)
 
-app.listen(PORT, async () => {
-  console.log(`Server running on PORT ${PORT}`);
+// Start the server
+const startServer = async () => {
   await connectToDatabase();
-});
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on PORT ${PORT}`);
+  });
+};
+
+startServer();

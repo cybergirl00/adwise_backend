@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {  createMedia, generateAIScript, getUserMedia } from "../controller/ad.controller.js";
+import {  createMedia, generateAIScript, getMatchingCampaigns, getUserMedia, handleClick, verifyApiKey } from "../controller/ad.controller.js";
 
 const adRouter = Router();
 
@@ -12,5 +12,10 @@ adRouter.post('/generateScript', generateAIScript)
 
 adRouter.post('/createMedia', createMedia)
 adRouter.get('/getMedia/:ownerId', getUserMedia)
+
+
+adRouter.get('/campaigns', verifyApiKey, getMatchingCampaigns)
+adRouter.post('/click', verifyApiKey, handleClick)
+
 
 export default adRouter;

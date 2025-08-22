@@ -21,6 +21,7 @@
     "morgan": "~1.9.1",
     "node-cron": "^4.2.1",
     "openai": "^5.10.2",
+    "socket.io": "^4.8.1",
     "svix": "^1.68.0"
   },
   "devDependencies": {

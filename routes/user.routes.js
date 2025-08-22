@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { completeProfile } from "../controller/user.controller.js";
+import { completeProfile, getAppData, getCreatorbyId, getCreators, getUserbyClerkId } from "../controller/user.controller.js";
 
 const userRouter = Router();
 
@@ -9,5 +9,10 @@ userRouter.get('/', (req, res) => {
 
 
 userRouter.post('/updateProfile', completeProfile)
+userRouter.get('/getuserbyclerkId/:clerkId', getUserbyClerkId);
+userRouter.get('/creators', getCreators);
+userRouter.get('/creators/:id', getCreatorbyId);
+
+userRouter.get('/userdata/:clerkId', getAppData)
 
 export default userRouter;

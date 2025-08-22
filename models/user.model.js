@@ -11,6 +11,8 @@ const userSchema = new  mongoose.Schema({
     rate: {type: Number, default: 10000},
     clerkId: {type: String, required: [true, 'Clerk is required'],},
     balance: {type: Number, default: 0},
+    pendingbalance: {type: Number, default: 0},
+    totalSpent: {type: Number, default: 0},
     profile: {type: Number, default: 2},
     specialties: {type: Array(String)},
     portfolio: {type: Array(String)}
