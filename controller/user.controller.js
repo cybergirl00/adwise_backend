@@ -155,7 +155,8 @@ export const getAppData = async (req, res) => {
         totalSpent,
         creatorsHired: hiredCreators.length,
         campaignsReached,
-        transactions
+        transactions,
+        
       };
 
       return res.status(200).json({ message: "Business data found", data });

@@ -169,6 +169,28 @@ export const getUserMedia = async (req, res) => {
   }
 }
 
+
+export const getUserMediagallery = async (req, res) => {
+  try {
+    const { ownerId} = req.params;
+
+    if(!ownerId) {
+      return res.status(400).json({ message: "Owner Id id required"})
+    }
+
+    const media = await Media.find({ ownerId: ownerId,  }).sort({ createdAt: -1 })
+
+    if(!media) {
+      return res.status(404).json({ message: "Owner is not found", media})
+    }
+
+    return res.status(200).json({ message: "Media found", data: media})
+  } catch (error) {
+    return res.status(500).json({ message: "Inter server Error ", error: error?.message})
+  }
+}
+
+
 export const verifyApiKey = async (req, res, next) => {
   const apiKey = req.headers['x-api-key'];
   if (!apiKey) return res.status(401).json({ error: 'API key required' });
@@ -297,13 +319,15 @@ export const getMatchingCampaigns = async (req, res) => {
           .select('mediaUrl title')
           .lean();
 
+         
+
         if (!media) return null;
 
         return {
           ...campaign,
           media: {
-            mediaId: media._id.toString(),     // 👈 send mediaId
-            urls: media.mediaUrl,              // 👈 send array of URLs
+            mediaId: media._id.toString(),     
+            urls: media.mediaUrl,             
             title: media.title
           }
         };

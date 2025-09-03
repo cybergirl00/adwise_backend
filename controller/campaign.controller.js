@@ -1,4 +1,3 @@
-import { ReturnDocument } from "mongodb";
 import Campaigns from "../models/campaign.model.js";
 import Media from "../models/media.model.js";
 import Request from "../models/request.model.js";
@@ -80,7 +79,6 @@ export const createCampaign = async (req, res) => {
   }
 };
 
-
 export const sendProjectRequest = async (req, res) => {
   try {
     const { creatorId, ownerId, title, description, category, numberofFiles, deadline, budget, requirements } = req.body;
@@ -138,7 +136,6 @@ export const sendProjectRequest = async (req, res) => {
   }
 }
 
-
 export const getCreatorRequest = async (req, res) => {
   try {
     const { clerkId } = req.params;
@@ -148,7 +145,7 @@ export const getCreatorRequest = async (req, res) => {
     }
 
     // Find all requests for this creator
-    const userRequests = await Request.find({ creatorId: clerkId });
+    const userRequests = await Request.find({ creatorId: clerkId }).sort({ createdAt: -1})
 
     // If no requests found, return empty array
     if (!userRequests || userRequests.length === 0) {
@@ -216,7 +213,6 @@ export const getCreatorRequestbetweenowner = async (req, res) => {
   }
 };
 
-
 export const declineRequest = async (req, res) => {
   try {
     const { requestId, clerkId } = req.params;
@@ -266,8 +262,6 @@ export const declineRequest = async (req, res) => {
   }
 }
 
-
-
 export const approveRequest = async (req, res) => {
   try {
     const { requestId, clerkId } = req.params;
@@ -314,7 +308,6 @@ export const approveRequest = async (req, res) => {
     console.log(error)
   }
 }
-
 
 export const createSubmission = async (req, res) => {
   try {
@@ -387,11 +380,11 @@ export const createSubmission = async (req, res) => {
     // Create media - pass files directly (not wrapped in another array)
     const createMedia = await Media.create({
       clerkId: creatorId,
-      ownerId: request.ownerId, // Get ownerId from request
+      ownerId: request.ownerId,
       title: title,
       description: `Media submission from creator: ${creator.firstName}`,
       mediaUrl: files,
-      requestId: requestId
+      requestId: requestId,
     });
 
     // Create message
@@ -419,7 +412,6 @@ export const createSubmission = async (req, res) => {
     });
   }
 };
-
 
 export const approverSubmission = async (req, res) => {
   try {
@@ -464,15 +456,18 @@ export const approverSubmission = async (req, res) => {
     owner.pendingbalance = owner.pendingbalance -  request.budget
     creator.balance = request.budget + creator.balance;
 
+    owner.totalSpent = owner.totalSpent + request.budget
+
       await media.save();
     await request.save();
     await owner.save();
     await creator.save();
+
+    return res.status(200).json({message: "Submission approved"})
   } catch (error) {
-    console.log(error)
+    return res.status(500).json({message: "Internal server error", error: error.message})
   }
 }
-
 
 export const declineSubmission = async (req, res) => {
   try {
@@ -521,7 +516,9 @@ export const declineSubmission = async (req, res) => {
 
       await media.save();
     await request.save();
+
+    return res.status(200).json({message: "Submission declined"})
   } catch (error) {
-    console.log(error)
+    return res.status(500).json({message: "Internal server error", error: error.message})
   }
 }

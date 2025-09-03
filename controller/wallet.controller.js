@@ -59,7 +59,7 @@ export const getUserTransactions = async (req, res) => {
             return res.status(400).json({message: "ClerkId is required"})
         }
 
-        const transactions = await Transaction.find({clerkId: clerkId})
+        const transactions = await Transaction.find({clerkId: clerkId}).sort({ createdAt: -1 })
 
         if(!transactions) {
             return res.status(404).json({message: "Transaction not found"})
